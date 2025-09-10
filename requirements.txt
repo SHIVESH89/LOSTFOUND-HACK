@@ -1,0 +1,8 @@
+gradio
+sentence-transformers
+transformers
+torch
+pillow
+google-genai
+qdrant-client
+numpy
