@@ -54,3 +54,77 @@ def embed_text(text: str):
 
 def embed_image(img: Image.Image):
     return embedder.encode(img).tolist()
+
+# --------------------------
+# Core Logic: Add, Search, Clear
+# --------------------------
+
+def add_item(image, description, finder_name, finder_phone):
+    if image is None or description.strip() == "":
+        return "Please provide both an image and a description."
+
+    embedding = embed_image(image)
+    img_b64 = image_to_base64(image)
+
+    metadata = {
+        "description": description,
+        "finder_name": finder_name if finder_name.strip() else "NA",
+        "finder_phone": finder_phone if finder_phone.strip() else "NA",
+        "image_b64": img_b64
+    }
+
+    qclient.upsert(
+        collection_name=COLLECTION_NAME,
+        points=[
+            PointStruct(
+                id=str(uuid.uuid4()),
+                vector=embedding,
+                payload=metadata
+            )
+        ]
+    )
+    return "Item successfully added!"
+
+def search_items(query_text, query_image):
+    if not query_text and query_image is None:
+        return "Please enter text or upload an image to search.", []
+
+    if query_image:
+        query_vector = embed_image(query_image)
+    else:
+        query_vector = embed_text(query_text)
+
+    results = qclient.search(
+        collection_name=COLLECTION_NAME,
+        query_vector=query_vector,
+        limit=5
+    )
+
+    if not results:
+        return "No matches found.", []
+
+    gallery = []
+    output_text = "### Matches Found\n\n"
+    for r in results:
+        desc = r.payload.get("description", "No description")
+        name = r.payload.get("finder_name", "NA")
+        phone = r.payload.get("finder_phone", "NA")
+        output_text += f"- *{desc}* — Finder: {name}, Phone: {phone}\n"
+
+        if "image_b64" in r.payload:
+            try:
+                img = base64_to_image(r.payload["image_b64"])
+                gallery.append(img)
+            except Exception:
+                pass
+
+    return output_text, gallery
+
+def clear_database():
+    qclient.delete_collection(COLLECTION_NAME)
+    qclient.recreate_collection(
+        collection_name=COLLECTION_NAME,
+        vectors_config=VectorParams(size=VECTOR_SIZE, distance=Distance.COSINE),
+    )
+    return "Database cleared successfully."
+
