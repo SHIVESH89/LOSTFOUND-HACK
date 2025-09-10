@@ -128,3 +128,51 @@ def clear_database():
     )
     return "Database cleared successfully."
 
+# --------------------------
+# Gradio UI
+# --------------------------
+
+with gr.Blocks() as demo:
+    gr.Markdown(
+        """
+        # Lost & Found System  
+        A simple platform to add and search lost items.  
+        """
+    )
+
+    with gr.Tab("Add Item"):
+        gr.Markdown("### Add a Found Item")
+        with gr.Row():
+            image_in = gr.Image(type="pil", label="Upload Image")
+            desc_in = gr.Textbox(label="Item Description")
+        with gr.Row():
+            finder_name = gr.Textbox(label="Finder's Name (optional)")
+            finder_phone = gr.Textbox(label="Finder's Phone Number (optional)")
+        add_btn = gr.Button("Submit Item", variant="primary")
+        add_output = gr.Textbox(label="Status", interactive=False)
+
+    with gr.Tab("Search"):
+        gr.Markdown("### Search Lost Items")
+        with gr.Row():
+            search_text = gr.Textbox(label="Search by Text")
+            search_image = gr.Image(type="pil", label="Or Upload Image")
+        search_btn = gr.Button("Search", variant="primary")
+        search_output = gr.Markdown()
+        gallery = gr.Gallery(label="Matched Items", show_label=True, elem_id="gallery")
+
+    with gr.Tab("Admin"):
+        gr.Markdown("### Admin Controls")
+        clear_btn = gr.Button("Clear Database", variant="stop")
+        clear_output = gr.Textbox(label="Status", interactive=False)
+
+    # Button actions
+    add_btn.click(add_item, inputs=[image_in, desc_in, finder_name, finder_phone], outputs=add_output)
+    search_btn.click(search_items, inputs=[search_text, search_image], outputs=[search_output, gallery])
+    clear_btn.click(clear_database, outputs=clear_output)
+
+# --------------------------
+# Launch App
+# --------------------------
+if __name__ == "__main__":
+    demo.launch(server_name="0.0.0.0", server_port=7860)
+
