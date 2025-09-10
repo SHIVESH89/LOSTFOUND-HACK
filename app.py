@@ -35,3 +35,22 @@ qclient.recreate_collection(
     collection_name=COLLECTION_NAME,
     vectors_config=VectorParams(size=VECTOR_SIZE, distance=Distance.COSINE),
 )
+
+# --------------------------
+# Helper Functions
+# --------------------------
+
+def image_to_base64(img: Image.Image) -> str:
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return base64.b64encode(buf.getvalue()).decode("utf-8")
+
+def base64_to_image(b64_str: str) -> Image.Image:
+    img_bytes = base64.b64decode(b64_str)
+    return Image.open(io.BytesIO(img_bytes))
+
+def embed_text(text: str):
+    return embedder.encode(text).tolist()
+
+def embed_image(img: Image.Image):
+    return embedder.encode(img).tolist()
